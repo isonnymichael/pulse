@@ -194,13 +194,37 @@ export function generateOptimizationInstructions(results) {
     instructions += `- [ ] Check for third-party scripts that can be deferred or removed\n`;
   }
 
-  instructions += `\n## Execution Rules\n\n`;
+  // Image processing section
+  const imageAudits = ['modern-image-formats', 'uses-responsive-images', 'uses-optimized-images', 'efficient-animated-content', 'offscreen-images'];
+  const hasImageIssues = results.opportunities.some(o => imageAudits.includes(o.id));
+  if (hasImageIssues) {
+    instructions += `## Image Optimization Commands\n\n`;
+    instructions += `For image-related optimizations, use CLI tools via shell commands. The AI agent should execute these directly:\n\n`;
+    instructions += `**Install sharp-cli (if not available):**\n`;
+    instructions += `\`\`\`bash\nnpx sharp-cli --help\n\`\`\`\n\n`;
+    instructions += `**Convert to WebP:**\n`;
+    instructions += `\`\`\`bash\nnpx sharp-cli --input "<path>/*.{jpg,jpeg,png}" --output "<path>/" --format webp --quality 80\n\`\`\`\n\n`;
+    instructions += `**Resize images:**\n`;
+    instructions += `\`\`\`bash\nnpx sharp-cli --input "<path>/image.jpg" --output "<path>/image-800.webp" --width 800 --format webp --quality 80\n\`\`\`\n\n`;
+    instructions += `**Compress existing images:**\n`;
+    instructions += `\`\`\`bash\nnpx sharp-cli --input "<path>/*.jpg" --output "<path>/" --quality 80\n\`\`\`\n\n`;
+    instructions += `**Optimize SVGs:**\n`;
+    instructions += `\`\`\`bash\nnpx svgo --multipass --folder <path>/\n\`\`\`\n\n`;
+    instructions += `Replace \`<path>\` with the actual image directories found in the project. Scan the project first to locate all image assets before running commands.\n\n`;
+  }
+
+  instructions += `## Execution Rules\n\n`;
   instructions += `1. Only modify files that exist in the current project directory.\n`;
   instructions += `2. Make each optimization as a focused, minimal change.\n`;
   instructions += `3. Preserve existing functionality — do not break features for performance.\n`;
   instructions += `4. Add code comments explaining each performance optimization.\n`;
   instructions += `5. After applying changes, list what was modified and the expected impact.\n`;
-  instructions += `6. Delete PULSE.md file after you are done.\n`;
+  instructions += `6. For image optimizations, execute the shell commands (sharp-cli, svgo) directly — do not ask the user to run them manually.\n`;
+
+  instructions += `\n## IMPORTANT: Cleanup\n\n`;
+  instructions += `After you have completed ALL optimizations above, you MUST delete the PULSE.md file from the project root.\n`;
+  instructions += `This file is a temporary instruction file and must not remain in the project.\n`;
+  instructions += `Run: \`rm PULSE.md\` or use your file deletion tool to remove it.\n`;
 
   instructions += `\n======================================================\n`;
 
@@ -225,12 +249,24 @@ function getActionsForOpportunity(opp) {
       detail: 'Identify JavaScript modules/functions that are imported but not used. Apply tree-shaking, code-split large bundles, and lazy-load non-critical modules.',
     }],
     'modern-image-formats': [{
-      title: 'Convert images to modern formats',
-      detail: 'Convert JPEG/PNG images to WebP or AVIF format. Use `<picture>` element with fallbacks. Update image references in HTML/CSS.',
+      title: 'Convert images to modern formats (WebP/AVIF)',
+      detail: `Find all JPEG/PNG images in the project and convert them to WebP using sharp-cli. Run these commands:
+   \`\`\`
+   npx sharp-cli --input "src/images/*.{jpg,jpeg,png}" --output "src/images/" --format webp --quality 80
+   npx sharp-cli --input "public/images/*.{jpg,jpeg,png}" --output "public/images/" --format webp --quality 80
+   \`\`\`
+   Then update HTML to use \`<picture>\` with WebP source and original as fallback:
+   \`\`\`html
+   <picture>
+     <source srcset="image.webp" type="image/webp">
+     <img src="image.jpg" alt="...">
+   </picture>
+   \`\`\`
+   Update any CSS \`background-image\` references to serve WebP with fallback.`,
     }],
     'offscreen-images': [{
       title: 'Defer offscreen images',
-      detail: 'Add `loading="lazy"` attribute to images below the fold. Ensure above-the-fold images are eagerly loaded. Consider using Intersection Observer for custom lazy loading.',
+      detail: 'Add `loading="lazy"` attribute to all `<img>` tags below the fold. Add `decoding="async"` to non-critical images. Ensure above-the-fold hero/LCP images keep `loading="eager"` or have `fetchpriority="high"`. For custom implementations, use Intersection Observer.',
     }],
     'unminified-css': [{
       title: 'Minify CSS files',
@@ -241,12 +277,37 @@ function getActionsForOpportunity(opp) {
       detail: 'Ensure all JS files are minified in production builds. Add JS minification/terser to the build pipeline if missing.',
     }],
     'uses-responsive-images': [{
-      title: 'Properly size images',
-      detail: 'Serve images at the correct dimensions for their display size. Use `srcset` and `sizes` attributes. Generate multiple image sizes for responsive layouts.',
+      title: 'Properly size and resize images',
+      detail: `Generate multiple image sizes for responsive layouts using sharp-cli. Run:
+   \`\`\`
+   npx sharp-cli --input "src/images/hero.jpg" --output "src/images/hero-480.webp" --width 480 --format webp --quality 80
+   npx sharp-cli --input "src/images/hero.jpg" --output "src/images/hero-768.webp" --width 768 --format webp --quality 80
+   npx sharp-cli --input "src/images/hero.jpg" --output "src/images/hero-1200.webp" --width 1200 --format webp --quality 80
+   \`\`\`
+   Then update \`<img>\` tags with \`srcset\` and \`sizes\`:
+   \`\`\`html
+   <img srcset="hero-480.webp 480w, hero-768.webp 768w, hero-1200.webp 1200w"
+        sizes="(max-width: 600px) 480px, (max-width: 900px) 768px, 1200px"
+        src="hero-1200.webp" alt="..." width="1200" height="800">
+   \`\`\`
+   Adapt the file names and breakpoints to match actual images found in the project.`,
     }],
     'efficient-animated-content': [{
-      title: 'Use efficient animated content',
-      detail: 'Replace GIF animations with video formats (MP4/WebM). Use CSS animations instead of JS-driven animations where possible.',
+      title: 'Replace GIF animations with video',
+      detail: `Convert GIF files to MP4/WebM for dramatically smaller file sizes. Run:
+   \`\`\`
+   npx @nickreese/gif-to-mp4 src/images/animation.gif
+   \`\`\`
+   Or if ffmpeg is available:
+   \`\`\`
+   ffmpeg -i animation.gif -vf "crop=trunc(iw/2)*2:trunc(ih/2)*2" -b:v 0 -crf 25 -f mp4 -vcodec libx264 -pix_fmt yuv420p animation.mp4
+   \`\`\`
+   Then replace \`<img src="animation.gif">\` with:
+   \`\`\`html
+   <video autoplay loop muted playsinline>
+     <source src="animation.mp4" type="video/mp4">
+   </video>
+   \`\`\``,
     }],
     'uses-text-compression': [{
       title: 'Enable text compression',
@@ -285,8 +346,18 @@ function getActionsForOpportunity(opp) {
       detail: 'Deduplicate JavaScript modules that appear in multiple bundles. Configure bundler to extract common chunks.',
     }],
     'uses-optimized-images': [{
-      title: 'Optimize image encoding',
-      detail: 'Re-encode images with optimal compression settings. Use quality 80-85 for JPEG, appropriate compression for PNG. Consider using image optimization tools in the build pipeline.',
+      title: 'Compress and optimize images',
+      detail: `Re-encode images with optimal compression using sharp-cli. Run:
+   \`\`\`
+   npx sharp-cli --input "src/images/*.jpg" --output "src/images/" --quality 80
+   npx sharp-cli --input "src/images/*.png" --output "src/images/" --compressionLevel 9
+   npx sharp-cli --input "public/**/*.{jpg,jpeg,png}" --output "public/" --quality 80
+   \`\`\`
+   For SVG files, optimize with svgo:
+   \`\`\`
+   npx svgo --multipass --folder src/images/
+   \`\`\`
+   Adapt the paths to match the actual image directories in the project. Target quality 75-85 for JPEG/WebP — visually identical but significantly smaller.`,
     }],
   };
 

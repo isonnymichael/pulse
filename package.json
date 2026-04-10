@@ -1,6 +1,6 @@
 {
   "name": "@isonnymichael/pulse",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "AI-layer web performance optimization using PageSpeed Insights",
   "main": "src/index.js",
   "type": "module",

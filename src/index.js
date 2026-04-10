@@ -44,10 +44,12 @@ Commands:
   optimize   Analyze a URL with PageSpeed Insights and generate optimization instructions
 
 Options:
+  -u, --url <url>            URL to analyze
+  -k, --api-key <key>        Google PageSpeed Insights API key
+  -s, --strategy <strategy>  mobile, desktop, or both (default: both)
+  --categories <list>        Comma-separated categories
   -V, --version              output the version number
   -h, --help                 display help for command
-
-Run \`pulse optimize --help\` for command-specific help.
 `);
 }
 
