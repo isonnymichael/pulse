@@ -1,0 +1,54 @@
+{
+  "name": "@isonnymichael/pulse",
+  "version": "0.0.1",
+  "description": "AI-layer web performance optimization using PageSpeed Insights",
+  "main": "src/index.js",
+  "type": "module",
+  "bin": {
+    "pulse": "bin/pulse.cjs"
+  },
+  "scripts": {
+    "release:npm": "npm publish --registry=https://registry.npmjs.org --@isonnymichael:registry=https://registry.npmjs.org",
+    "release:github": "npm publish --registry=https://npm.pkg.github.com",
+    "release": "npm run release:npm && npm run release:github"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/isonnymichael/pulse.git"
+  },
+  "bugs": {
+    "url": "https://github.com/isonnymichael/pulse/issues"
+  },
+  "homepage": "https://github.com/isonnymichael/pulse#readme",
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "pagespeed",
+    "lighthouse",
+    "web-performance",
+    "core-web-vitals",
+    "optimization",
+    "seo",
+    "claude",
+    "cursor",
+    "ai-agent",
+    "developer-tools",
+    "devtools",
+    "productivity"
+  ],
+  "author": "Sonny Michael",
+  "license": "GPL-3.0-only",
+  "dependencies": {}
+}
